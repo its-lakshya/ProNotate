@@ -1,20 +1,22 @@
 import "./App.css";
 import "bootstrap/dist/css/bootstrap.css";
-import { Routes, Route, Navigate } from "react-router-dom"
+import { Routes, Route, Navigate } from "react-router-dom";
 import NoteList from "./components/NoteList";
 import NewNote from "./components/NewNote";
 import { Container } from "react-bootstrap";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import { useMemo } from "react";
-import {v4 as uuidv4} from 'uuid'
+import { v4 as uuidv4 } from "uuid";
+import NoteLayout from "./components/NoteLayout";
+import Note from "./components/Note";
 
 export type Note = {
   id: string;
 } & NoteData;
 
 export type RawNote = {
-  id:string
-} & RawNoteData
+  id: string;
+} & RawNoteData;
 
 export type NoteData = {
   title: string;
@@ -26,44 +28,45 @@ export type RawNoteData = {
   title: string;
   markdown: string;
   tagIds: string[];
-}
+};
 
 export type Tag = {
   id: string;
   label: string;
 };
 
-
-
 function App() {
-  const [notes, setNotes] = useLocalStorage<RawNote[]>("NOTES", [])
-  const [tags, setTags] = useLocalStorage<Tag[]>("TAGS", [])
+  const [notes, setNotes] = useLocalStorage<RawNote[]>("NOTES", []);
+  const [tags, setTags] = useLocalStorage<Tag[]>("TAGS", []);
 
+  const notesWithTags = useMemo(() => {
+    return notes.map((note) => {
+      return {
+        ...note,
+        tags: tags.filter((tag) => note.tagIds.includes(tag.id)),
+      };
+    });
+  }, [notes, tags]);
 
-  const notesWithTags = useMemo(()=> {
-    return notes.map(note => {
-      return {...note, tags:tags.filter(tag=> note.tagIds.includes(tag.id))}
-    })
-  },[notes, tags])
-
-
-  function onCreateNote({tags, ...data}: NoteData){
-    setNotes(prevNotes => {
-      return [...prevNotes, {...data, id:uuidv4(), tagIds:tags.map(tag => tag.id)},]
-    })
+  function onCreateNote({ tags, ...data }: NoteData) {
+    setNotes((prevNotes) => {
+      return [
+        ...prevNotes,
+        { ...data, id: uuidv4(), tagIds: tags.map((tag) => tag.id) },
+      ];
+    });
   }
 
   function addTag(tag: Tag) {
-    setTags(prev => [...prev, tag])
+    setTags((prev) => [...prev, tag]);
   }
-  
+
   return (
     <Container className="my-4">
       <Routes>
         <Route
           path="/"
-          element={<NoteList availableTags={tags} notes={notesWithTags}
-          />}
+          element={<NoteList availableTags={tags} notes={notesWithTags} />}
         />
         <Route
           path="/new"
@@ -75,14 +78,16 @@ function App() {
             />
           }
         />
-        <Route path="/:id" >
-          
+        <Route
+          path="/:id"
+          element={<NoteLayout notes={notesWithTags} />}>
+        {/* <Route path="*" element={<Navigate to="/" />}/> */}
+        <Route index element={<Note/>} />
+        <Route path='edit' element={<h1>Edit</h1>}/>
         </Route>
-        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Container>
   );
 }
-
 
 export default App;
