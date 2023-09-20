@@ -62,7 +62,8 @@ function App() {
       <Routes>
         <Route
           path="/"
-          element={<NoteList/>}
+          element={<NoteList availableTags={tags} notes={notesWithTags}
+          />}
         />
         <Route
           path="/new"
